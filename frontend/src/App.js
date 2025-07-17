@@ -4,6 +4,8 @@ import LatexEditor from "./components/LatexEditor";
 import StarBorder from "./components/StarBorder";
 import NoteEditorModal from "./components/NoteEditorModal";
 import NotesList from "./components/NotesList";
+import { Search, Plus, ChevronLeft } from "lucide-react";
+// Remove Login, Register, AuthModal imports
 
 const API = "http://localhost:5000/api/notes";
 
@@ -12,7 +14,8 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function App() {
+function App() {
+  // Remove user, showRegister, showAuthModal, showWelcome, and all auth-related state
   const [showDashboard, setShowDashboard] = useState(true);
   const [notes, setNotes] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -25,13 +28,12 @@ export default function App() {
   const [error, setError] = useState("");
   const [showTitlePrompt, setShowTitlePrompt] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [search, setSearch] = useState("");
 
-  // Fetch notes
   useEffect(() => {
     axios.get(API).then(res => setNotes(res.data));
   }, []);
 
-  // Select note for editing
   const handleSelect = note => {
     setSelected(note);
     setTitle(note.title);
@@ -40,8 +42,6 @@ export default function App() {
     setUnsaved(false);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
   };
-
-  // Auto-save with debounce
   useEffect(() => {
     if (!selected) return;
     setUnsaved(true);
@@ -50,8 +50,6 @@ export default function App() {
       handleSave();
     }, 1200);
   }, [title, content]);
-
-  // Save note (create or update)
   const handleSave = async () => {
     setError("");
     console.log("handleSave called", { title, content, selected });
@@ -71,21 +69,16 @@ export default function App() {
         );
         setSelected(res.data);
       } else {
-        console.log("Creating note");
         const res = await axios.post(API, { title, content });
-        console.log("Note created", res.data);
         setNotes([res.data, ...notes]);
         setSelected(res.data);
       }
       setShowEditor(false);
       setUnsaved(false);
     } catch (err) {
-      console.error("Error saving note", err);
       setError(err?.response?.data?.error || err.message || "Failed to save note.");
     }
   };
-
-  // Delete note
   const handleDelete = async id => {
     setError("");
     try {
@@ -102,13 +95,10 @@ export default function App() {
       setError(err?.response?.data?.error || err.message || "Failed to delete note.");
     }
   };
-
-  // New note
   const handleNew = () => {
     setNewNoteTitle("");
     setShowTitlePrompt(true);
   };
-
   const handleTitlePromptSubmit = () => {
     if (!newNoteTitle.trim()) return;
     setSelected(null);
@@ -119,8 +109,6 @@ export default function App() {
     setUnsaved(false);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
   };
-
-  // Pin/unpin note
   const handlePin = async (id, pinned) => {
     setError("");
     try {
@@ -192,8 +180,9 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-x-hidden">
       <div className="absolute top-0 left-1/2 w-96 h-96 bg-blue-700 opacity-20 rounded-full filter blur-3xl animate-pulse -z-10" style={{animationDuration: '7s'}}></div>
       <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-purple-700 opacity-20 rounded-full filter blur-3xl animate-pulse -z-10" style={{animationDuration: '9s'}}></div>
-      {/* Top nav bar */}
       <div className="flex items-center justify-between px-8 py-4 bg-gray-900/80 rounded-b-3xl shadow-lg mb-8 mx-4 mt-2">
+      <ChevronLeft color="white" size={24} className="cursor-pointer hover:text-blue-400 transition-all" onClick={() => setShowDashboard(true)} />
+      
         <div className="flex gap-4">
           <button
             className={`px-6 py-2 rounded-full font-semibold text-sm transition-all ${tab === "all" ? "bg-blue-600 text-white shadow" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
@@ -209,17 +198,27 @@ export default function App() {
           </button>
         </div>
         <div className="flex items-center gap-6">
+          {/* Search Notes input */}
+          <div className="relative flex items-center bg-gray-800/80 rounded-full px-4 py-2 shadow-lg">
+          <Search color="white"/>
+          <input
+            className="px-4 py-2 rounded-xl text-gray-100  focus:outline-none  placeholder-gray-300 shadow-inner bg-transparent w-64"
+            placeholder="Search notes..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            aria-label="Search notes"
+          />
+          </div>
           <button
             className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white text-2xl shadow-lg hover:bg-blue-700 transition-all"
             onClick={handleNew}
             aria-label="Add note"
           >
-            +
+            <Plus size={20} />
           </button>
           <button className="text-red-400 font-semibold hover:underline text-md">Sign Out</button>
         </div>
       </div>
-      {/* Notes grid */}
       <div className="px-8 pb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {displayedNotes.length === 0 && (
           <div className="col-span-full text-center text-gray-400 py-16 text-lg">No notes found</div>
@@ -230,9 +229,9 @@ export default function App() {
           onDelete={handleDelete}
           onPin={handlePin}
           selectedId={selected?._id}
+          tab={tab}
         />
       </div>
-      {/* Editor modal/drawer */}
       <NoteEditorModal
         open={showEditor}
         onClose={() => setShowEditor(false)}
@@ -244,7 +243,6 @@ export default function App() {
         error={error}
         isUpdate={!!selected}
       />
-      {/* Title prompt modal */}
       {showTitlePrompt && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative flex flex-col">
@@ -278,3 +276,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;

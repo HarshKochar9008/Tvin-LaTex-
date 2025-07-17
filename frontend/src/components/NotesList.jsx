@@ -1,150 +1,119 @@
 import React, { useState } from "react";
 import { Pin, PinOff, Trash2 } from "lucide-react";
 
-export default function NotesList({ notes, onSelect, onDelete, onPin, selectedId }) {
-  const [search, setSearch] = useState("");
-  // Confirm before delete
+export default function NotesList({ notes, onSelect, onDelete, onPin, selectedId, tab }) {
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const handleDelete = (e, id, title) => {
     e.stopPropagation();
-    if (window.confirm(`Delete note: "${title}"? This cannot be undone.`)) {
-      onDelete(id);
+    setDeleteTarget({ id, title });
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      onDelete(deleteTarget.id);
+      setDeleteTarget(null);
     }
   };
-  // Pin/unpin note
+
+  const cancelDelete = () => setDeleteTarget(null);
+
   const handlePin = (e, id, pinned) => {
     e.stopPropagation();
     onPin(id, !pinned);
   };
-  // Filter notes by search
-  const filteredNotes = notes.filter(note =>
-    note.title.toLowerCase().includes(search.toLowerCase())
-  );
-  const pinnedNotes = filteredNotes.filter(n => n.pinned);
-  const otherNotes = filteredNotes.filter(n => !n.pinned);
+
+  const formatDate = dateStr => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getPreview = content => {
+    const lines = content.split('\n');
+    return lines.slice(0, 2).join(' ').slice(0, 100) + (content.length > 100 ? '...' : '');
+  };
+
   return (
-    <div className="relative w-full max-w-xs min-w-[260px] h-[80vh] mx-4 my-6 p-5 rounded-3xl shadow-2xl border border-white/20 bg-white/10 backdrop-blur-lg flex flex-col overflow-y-auto glassmorphism-sidebar">
-      {/* Blurred animated background */}
-      <div className="absolute top-0 left-0 w-60 h-60 bg-blue-700 opacity-20 rounded-full filter blur-2xl animate-pulse -z-10" style={{animationDuration: '7s'}}></div>
-      <div className="absolute bottom-0 right-0 w-60 h-60 bg-purple-700 opacity-20 rounded-full filter blur-2xl animate-pulse -z-10" style={{animationDuration: '9s'}}></div>
-      <h2 className="font-bold text-white text-lg mb-4 tracking-wide drop-shadow">Notes</h2>
-      <input
-        className="mb-4 px-4 py-2 rounded-xl bg-white/20 text-gray-100 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 shadow-inner backdrop-blur-md"
-        placeholder="Search notes..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        aria-label="Search notes"
-      />
-      {/* Important section */}
-      {pinnedNotes.length > 0 && (
-        <>
-          <div className="text-yellow-300 font-semibold mb-1 mt-2">Important</div>
-          <ul className="space-y-3 mb-4" tabIndex={0} aria-label="Important notes">
-            {pinnedNotes.map((note, idx) => (
-              <li
+    <>
+      <div className="w-max overflow-x-auto">
+        {(notes.length > 0 || tab === 'all') && (
+          <div className="flex gap-6 px-4 py-6 w-full min-h-[300px] bg-gray-800/80 rounded-2xl shadow-xl border border-gray-700">
+            {notes.length === 0 && tab === 'all' && (
+              <div className="text-center text-gray-400 py-16 text-lg">No notes found</div>
+            )}
+            {notes.map(note => (
+              <div
                 key={note._id}
-                className={`relative flex justify-between items-center p-4 rounded-2xl cursor-pointer transition-all border shadow-lg group glassmorphism-card
-                  ${selectedId === note._id
-                    ? "bg-blue-400/30 border-blue-400 ring-2 ring-blue-300 shadow-xl"
-                    : "bg-yellow-200/10 border-white/10 hover:bg-blue-400/20 hover:border-blue-300 hover:shadow-xl"}
-                `}
+                className={`relative flex flex-col w-[300px] p-6 rounded-3xl shadow-2xl border border-white/20 transition-all cursor-pointer bg-white/20 backdrop-blur-lg hover:bg-blue-200/10 group min-h-[200px] ${selectedId === note._id ? 'ring-2 ring-blue-400 border-blue-400' : ''}`}
+                style={{
+                  backgroundImage:
+                    'repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 32px)',
+                }}
                 onClick={() => onSelect(note)}
                 tabIndex={0}
                 aria-selected={selectedId === note._id}
                 onKeyDown={e => {
-                  if (e.key === "Enter" || e.key === " ") onSelect(note);
+                  if (e.key === 'Enter' || e.key === ' ') onSelect(note);
                 }}
               >
-                {/* Blurred background */}
-                <div className="absolute inset-0 w-full h-full bg-yellow-100/10 blur-xl rounded-2xl -z-10 pointer-events-none" />
-                {/* Left dash */}
-                <div className="absolute left-0 top-6 h-6 w-1 rounded bg-yellow-400/80" />
-                <span className="truncate text-white font-medium ml-3" title={note.title}>{note.title}</span>
-                <div className="flex items-center gap-1 ml-auto">
+                <div className="absolute left-0 top-6 h-6 w-1 rounded bg-blue-400/80" />
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl font-bold text-white truncate" title={note.title}>
+                    {note.title}
+                  </span>
+                  <span className="ml-1 w-3 h-3 rounded-full bg-gray-400 inline-block" />
+                </div>
+                <div className="text-xs text-blue-200 mb-2">{formatDate(note.updatedAt || note.createdAt)}</div>
+                <div className="text-gray-200 text-base mb-6 min-h-[48px] break-words whitespace-pre-line">
+                  {getPreview(note.content)}
+                </div>
+                <div className="flex items-center gap-4 mt-auto">
                   <button
-                    className="text-yellow-400 opacity-100 transition-opacity p-1 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    title="Unpin note"
+                    className={`text-yellow-400 ${note.pinned ? '' : 'opacity-60'} hover:opacity-100 transition-opacity p-1 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400`}
+                    title={note.pinned ? 'Unpin note' : 'Pin note'}
                     tabIndex={-1}
                     onClick={e => handlePin(e, note._id, note.pinned)}
                   >
-                    <Pin fill="currentColor" size={18} />
+                    {note.pinned ? <Pin fill="currentColor" size={22} /> : <PinOff size={22} />}
                   </button>
                   <button
-                    className="text-red-400 ml-2 focus:outline-none focus:ring-2 focus:ring-red-400 rounded hover:bg-red-900/30 p-1"
+                    className="text-red-400 focus:outline-none focus:ring-2 focus:ring-red-400 rounded hover:bg-red-100/10 p-1"
                     aria-label={`Delete note ${note.title}`}
                     onClick={e => handleDelete(e, note._id, note.title)}
                     tabIndex={-1}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={22} />
                   </button>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
-        </>
-      )}
-      {/* Other notes */}
-      <ul className="space-y-3" tabIndex={0} aria-label="Notes">
-        {otherNotes.length === 0 && filteredNotes.length === 0 && (
-          <li className="text-gray-400 text-sm text-center py-8">No notes found</li>
+          </div>
         )}
-        {otherNotes.map((note, idx) => (
-          <li
-            key={note._id}
-            className={`relative flex justify-between items-center p-4 rounded-2xl cursor-pointer transition-all border shadow-lg group glassmorphism-card
-              ${selectedId === note._id
-                ? "bg-blue-400/30 border-blue-400 ring-2 ring-blue-300 shadow-xl"
-                : "bg-white/10 border-white/10 hover:bg-blue-400/20 hover:border-blue-300 hover:shadow-xl"}
-            `}
-            onClick={() => onSelect(note)}
-            tabIndex={0}
-            aria-selected={selectedId === note._id}
-            onKeyDown={e => {
-              if (e.key === "Enter" || e.key === " ") onSelect(note);
-            }}
-          >
-            {/* Blurred background */}
-            <div className="absolute inset-0 w-full h-full bg-blue-100/10 blur-xl rounded-2xl -z-10 pointer-events-none" />
-            {/* Left dash */}
-            <div className="absolute left-0 top-6 h-6 w-1 rounded bg-blue-400/80" />
-            <span className="truncate text-white font-medium ml-3" title={note.title}>{note.title}</span>
-            <div className="flex items-center gap-1 ml-auto">
+      </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative flex flex-col">
+            <div className="text-white text-lg font-semibold mb-4 text-center">
+              Delete note: "{deleteTarget.title}"?
+            </div>
+            <div className="flex justify-center gap-6 mt-2">
               <button
-                className="text-yellow-400 opacity-0 group-hover:opacity-80 transition-opacity p-1 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                title="Pin note"
-                tabIndex={-1}
-                onClick={e => handlePin(e, note._id, note.pinned)}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg shadow hover:bg-red-700 transition-all font-semibold text-lg"
+                onClick={confirmDelete}
               >
-                {note.pinned ? <Pin fill="currentColor" size={18} /> : <PinOff size={18} />}
+                Delete
               </button>
               <button
-                className="text-red-400 ml-2 focus:outline-none focus:ring-2 focus:ring-red-400 rounded hover:bg-red-900/30 p-1"
-                aria-label={`Delete note ${note.title}`}
-                onClick={e => handleDelete(e, note._id, note.title)}
-                tabIndex={-1}
+                className="bg-gray-700 text-gray-200 px-6 py-2 rounded-lg shadow hover:bg-gray-600 transition-all font-semibold text-lg"
+                onClick={cancelDelete}
               >
-                <Trash2 size={18} />
+                Cancel
               </button>
             </div>
-          </li>
-        ))}
-      </ul>
-      {/* Custom scrollbar styles */}
-      <style>{`
-        .glassmorphism-sidebar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .glassmorphism-sidebar::-webkit-scrollbar-thumb {
-          background: rgba(180, 200, 255, 0.18);
-          border-radius: 8px;
-        }
-        .glassmorphism-sidebar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .glassmorphism-card {
-          backdrop-filter: blur(8px) saturate(120%);
-          -webkit-backdrop-filter: blur(8px) saturate(120%);
-        }
-      `}</style>
-    </div>
+          </div>
+        </div>
+      )}
+    </>
   );
-} 
+}

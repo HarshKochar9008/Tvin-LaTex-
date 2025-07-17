@@ -5,8 +5,6 @@ import Toolbar from "./Toolbar";
 
 export default function LatexEditor({ value, setValue }) {
   const textareaRef = useRef();
-
-  // Insert LaTeX at cursor
   const handleInsert = latex => {
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
@@ -19,10 +17,8 @@ export default function LatexEditor({ value, setValue }) {
       textarea.selectionStart = textarea.selectionEnd = start + latex.length;
     }, 0);
   };
-
   return (
     <div className="relative w-full">
-      {/* Blurred animated background */}
       <div className="absolute top-0 left-1/3 w-96 h-48 bg-blue-700 opacity-10 rounded-full filter blur-2xl animate-pulse -z-10" style={{animationDuration: '8s'}}></div>
       <Toolbar onInsert={handleInsert} />
       <div className="flex flex-col md:flex-row gap-6 mt-4">
