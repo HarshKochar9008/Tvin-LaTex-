@@ -25,26 +25,6 @@ function App() {
   const [search, setSearch] = useState("");
   const [selectedNotes, setSelectedNotes] = useState([]);
 
-  useEffect(() => {
-    axios.get(API).then(res => setNotes(res.data));
-  }, []);
-
-  const handleSelect = note => {
-    setSelected(note);
-    setTitle(note.title);
-    setContent(note.content);
-    setShowEditor(true);
-    // Removed: setUnsaved(false);
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-  };
-  useEffect(() => {
-    if (!selected) return;
-    // Removed: setUnsaved(true);
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      handleSave();
-    }, 1200);
-  }, [title, content, selected]);
   const handleSave = async () => {
     setError("");
     console.log("handleSave called", { title, content, selected });
@@ -69,11 +49,22 @@ function App() {
         setSelected(res.data);
       }
       setShowEditor(false);
-      // Removed: setUnsaved(false);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Failed to save note.");
     }
   };
+
+  useEffect(() => {
+    axios.get(API).then(res => setNotes(res.data));
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      handleSave();
+    }, 1200);
+  }, [title, content, selected, handleSave]);
   const handleDelete = async id => {
     setError("");
     try {
@@ -118,6 +109,13 @@ function App() {
   };
 
   // Selection handlers
+  const handleSelect = note => {
+    setSelected(note);
+    setTitle(note.title);
+    setContent(note.content);
+    setShowEditor(true);
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+  };
   const handleSelectNote = id => {
     setSelectedNotes(sel => sel.includes(id) ? sel.filter(nid => nid !== id) : [...sel, id]);
   };
