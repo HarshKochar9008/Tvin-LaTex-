@@ -40,7 +40,7 @@ function App() {
           setSelected(res.data);
         } else {
           const res = await axios.post(API, { title, content });
-          setNotes([res.data, ...notes]);
+          setNotes(prevNotes => [res.data, ...prevNotes]);
           setSelected(res.data);
         }
         setShowEditor(false);
