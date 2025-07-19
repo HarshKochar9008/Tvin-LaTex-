@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import LatexEditor from "./components/LatexEditor";
 import StarBorder from "./components/StarBorder";
 import NoteEditorModal from "./components/NoteEditorModal";
 import NotesList from "./components/NotesList";
 import { Search, Plus, ChevronLeft } from "lucide-react";
-import { saveAs } from "file-saver";
-import { toPng } from "html-to-image";
-import { BlockMath } from "react-katex";
-import ReactDOM from "react-dom/client";
 
 const API = "http://localhost:5000/api/notes";
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
+
 
 function App() {
   // Remove user, showRegister, showAuthModal, showWelcome, and all auth-related state
@@ -24,7 +16,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [unsaved, setUnsaved] = useState(false);
+  const [setUnsaved] = useState(false);
   const [tab, setTab] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const saveTimeout = useRef(null);
@@ -33,7 +25,6 @@ function App() {
   const [newNoteTitle, setNewNoteTitle] = useState("");
   const [search, setSearch] = useState("");
   const [selectedNotes, setSelectedNotes] = useState([]);
-  const previewRef = useRef();
 
   useEffect(() => {
     axios.get(API).then(res => setNotes(res.data));
