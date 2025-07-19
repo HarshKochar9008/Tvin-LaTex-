@@ -5,7 +5,10 @@ import StarBorder from "./components/StarBorder";
 import NoteEditorModal from "./components/NoteEditorModal";
 import NotesList from "./components/NotesList";
 import { Search, Plus, ChevronLeft } from "lucide-react";
-// Remove Login, Register, AuthModal imports
+import { saveAs } from "file-saver";
+import { toPng } from "html-to-image";
+import { BlockMath } from "react-katex";
+import ReactDOM from "react-dom/client";
 
 const API = "http://localhost:5000/api/notes";
 
@@ -29,6 +32,8 @@ function App() {
   const [showTitlePrompt, setShowTitlePrompt] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedNotes, setSelectedNotes] = useState([]);
+  const previewRef = useRef();
 
   useEffect(() => {
     axios.get(API).then(res => setNotes(res.data));
@@ -122,8 +127,27 @@ function App() {
     }
   };
 
+  // Selection handlers
+  const handleSelectNote = id => {
+    setSelectedNotes(sel => sel.includes(id) ? sel.filter(nid => nid !== id) : [...sel, id]);
+  };
+  const allSelected = notes.length > 0 && selectedNotes.length === notes.length;
+  const handleSelectAll = () => {
+    if (allSelected) setSelectedNotes([]);
+    else setSelectedNotes(notes.map(n => n._id));
+  };
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    for (const id of selectedNotes) {
+      await handleDelete(id);
+    }
+    setSelectedNotes([]);
+  };
+
   // Filter notes by tab
-  const displayedNotes = tab === "all" ? notes : notes.filter(n => n.important);
+  const displayedNotes = tab === "all"
+    ? notes
+    : notes.filter(n => n.pinned); // Only show pinned notes in important section
 
   if (showDashboard) {
     return (
@@ -216,20 +240,22 @@ function App() {
           >
             <Plus size={20} />
           </button>
-          <button className="text-red-400 font-semibold hover:underline text-md">Sign Out</button>
         </div>
       </div>
       <div className="px-8 pb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {displayedNotes.length === 0 && (
-          <div className="col-span-full text-center text-gray-400 py-16 text-lg">No notes found</div>
-        )}
+
         <NotesList
-          notes={notes}
+          notes={displayedNotes} // Pass filtered notes
           onSelect={handleSelect}
           onDelete={handleDelete}
           onPin={handlePin}
           selectedId={selected?._id}
           tab={tab}
+          selectedNotes={selectedNotes}
+          onSelectNote={handleSelectNote}
+          onSelectAll={handleSelectAll}
+          onBulkDelete={handleBulkDelete}
+          allSelected={allSelected}
         />
       </div>
       <NoteEditorModal
