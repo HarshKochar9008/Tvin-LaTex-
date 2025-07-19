@@ -19,3 +19,11 @@ mongoose
   .catch(err => console.error(err));
 
 export const handler = serverless(app);
+
+// Start server locally if not in production (for development)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

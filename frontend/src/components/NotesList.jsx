@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pin, PinOff, Trash2, Download, Square, CheckSquare } from "lucide-react";
+import { Pin, PinOff, Trash2, Square, CheckSquare } from "lucide-react";
 
 export default function NotesList({ notes, onSelect, onDelete, onPin, selectedId, tab, selectedNotes = [], onSelectNote, onSelectAll, onBulkDelete, allSelected }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -26,11 +26,6 @@ export default function NotesList({ notes, onSelect, onDelete, onPin, selectedId
   const formatDate = dateStr => {
     const d = new Date(dateStr);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
-  const getPreview = content => {
-    const lines = content.split('\n');
-    return lines.slice(0, 2).join(' ').slice(0, 100) + (content.length > 100 ? '...' : '');
   };
 
   return (
