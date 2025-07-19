@@ -4,7 +4,6 @@ import StarBorder from "./components/StarBorder";
 import NoteEditorModal from "./components/NoteEditorModal";
 import NotesList from "./components/NotesList";
 import { Search, Plus, ChevronLeft } from "lucide-react";
-import { set } from "mongoose";
 
 const API = "http://localhost:5000/api/notes";
 
@@ -17,7 +16,6 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [setUnsaved] = useState(false);
   const [tab, setTab] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const saveTimeout = useRef(null);
@@ -36,17 +34,17 @@ function App() {
     setTitle(note.title);
     setContent(note.content);
     setShowEditor(true);
-    setUnsaved(false);
+    // Removed: setUnsaved(false);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
   };
   useEffect(() => {
     if (!selected) return;
-    setUnsaved(true);
+    // Removed: setUnsaved(true);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
       handleSave();
     }, 1200);
-  }, [title, content, selected,setUnsaved]);
+  }, [title, content, selected]);
   const handleSave = async () => {
     setError("");
     console.log("handleSave called", { title, content, selected });
@@ -71,7 +69,7 @@ function App() {
         setSelected(res.data);
       }
       setShowEditor(false);
-      setUnsaved(false);
+      // Removed: setUnsaved(false);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Failed to save note.");
     }
@@ -86,7 +84,7 @@ function App() {
         setTitle("");
         setContent("");
         setShowEditor(false);
-        setUnsaved(false);
+        // Removed: setUnsaved(false);
       }
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Failed to delete note.");
@@ -103,7 +101,7 @@ function App() {
     setContent("");
     setShowEditor(true);
     setShowTitlePrompt(false);
-    setUnsaved(false);
+    // Removed: setUnsaved(false);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
   };
   const handlePin = async (id, pinned) => {
