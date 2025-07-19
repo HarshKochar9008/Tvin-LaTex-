@@ -4,6 +4,7 @@ import StarBorder from "./components/StarBorder";
 import NoteEditorModal from "./components/NoteEditorModal";
 import NotesList from "./components/NotesList";
 import { Search, Plus, ChevronLeft } from "lucide-react";
+import { set } from "mongoose";
 
 const API = "http://localhost:5000/api/notes";
 
@@ -45,7 +46,7 @@ function App() {
     saveTimeout.current = setTimeout(() => {
       handleSave();
     }, 1200);
-  }, [title, content]);
+  }, [title, content, selected,setUnsaved]);
   const handleSave = async () => {
     setError("");
     console.log("handleSave called", { title, content, selected });
