@@ -10,7 +10,6 @@ const API = "http://localhost:5000/api/notes";
 
 
 function App() {
-  // Remove user, showRegister, showAuthModal, showWelcome, and all auth-related state
   const [showDashboard, setShowDashboard] = useState(true);
   const [notes, setNotes] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -25,46 +24,33 @@ function App() {
   const [search, setSearch] = useState("");
   const [selectedNotes, setSelectedNotes] = useState([]);
 
-  const handleSave = async () => {
-    setError("");
-    console.log("handleSave called", { title, content, selected });
-    if (!title || !content) {
-      setError("Both title and content are required.");
-      return;
-    }
-    try {
-      if (selected) {
-        console.log("Updating note", selected._id);
-        const res = await axios.put(`${API}/${selected._id}`, {
-          title,
-          content
-        });
-        setNotes(notes =>
-          notes.map(n => (n._id === res.data._id ? res.data : n))
-        );
-        setSelected(res.data);
-      } else {
-        const res = await axios.post(API, { title, content });
-        setNotes([res.data, ...notes]);
-        setSelected(res.data);
-      }
-      setShowEditor(false);
-    } catch (err) {
-      setError(err?.response?.data?.error || err.message || "Failed to save note.");
-    }
-  };
-
-  useEffect(() => {
-    axios.get(API).then(res => setNotes(res.data));
-  }, []);
-
   useEffect(() => {
     if (!selected) return;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      handleSave();
+    saveTimeout.current = setTimeout(async () => {
+      setError("");
+      if (!title || !content) {
+        setError("Both title and content are required.");
+        return;
+      }
+      try {
+        if (selected) {
+          const res = await axios.put(`${API}/${selected._id}`, { title, content });
+          setNotes(notes => notes.map(n => (n._id === res.data._id ? res.data : n)));
+          setSelected(res.data);
+        } else {
+          const res = await axios.post(API, { title, content });
+          setNotes([res.data, ...notes]);
+          setSelected(res.data);
+        }
+        setShowEditor(false);
+      } catch (err) {
+        setError(err?.response?.data?.error || err.message || "Failed to save note.");
+      }
     }, 1200);
-  }, [title, content, selected, handleSave]);
+    // Cleanup function to clear timeout if dependencies change
+    return () => clearTimeout(saveTimeout.current);
+  }, [title, content, selected]);
   const handleDelete = async id => {
     setError("");
     try {
@@ -93,7 +79,6 @@ function App() {
     setShowEditor(true);
     setShowTitlePrompt(false);
     // Removed: setUnsaved(false);
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
   };
   const handlePin = async (id, pinned) => {
     setError("");
@@ -253,7 +238,20 @@ function App() {
         setTitle={setTitle}
         content={content}
         setContent={setContent}
-        onSave={handleSave}
+        onSave={() => {
+          setError("");
+          if (!title || !content) {
+            setError("Both title and content are required.");
+            return;
+          }
+          axios.post(API, { title, content }).then(res => {
+            setNotes([res.data, ...notes]);
+            setSelected(res.data);
+            setShowEditor(false);
+          }).catch(err => {
+            setError(err?.response?.data?.error || err.message || "Failed to save note.");
+          });
+        }}
         error={error}
         isUpdate={!!selected}
       />
